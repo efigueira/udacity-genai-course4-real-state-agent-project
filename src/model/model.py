@@ -1,4 +1,6 @@
 from langchain_openai import ChatOpenAI
+from pathlib import Path
+from diffusers import DiffusionPipeline
 
 
 class Model:
@@ -13,3 +15,22 @@ class Model:
         return self._llm
 
 
+class ImageGenerator:
+    _output_path = Path(__file__).parent.parent.parent / "images"
+    _max_tokens = 77
+
+    def __init__(self, img_description: str, img_name: str):
+        self._output_path.mkdir(exist_ok=True, parents=True)
+        self._img_description = img_description
+        self._img_output_path = self._output_path / img_name
+
+    def generate(self):
+        pipe = DiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5")
+        pipe = pipe.to("cpu")
+        image = pipe(self._img_description).images[0]
+        image.save(self._img_output_path)
+        return self._img_output_path
+
+    @property
+    def img_path(self):
+        return self._img_output_path

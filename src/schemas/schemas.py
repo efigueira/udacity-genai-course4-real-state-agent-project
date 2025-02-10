@@ -22,6 +22,14 @@ class ListPropertyDetails(BaseModel):
     properties_list: List[PropertyDetails] = Field(description="A list of real estate properties")
 
 
+def df_to_property_details(df):
+    if "image_path" in df.columns:
+        df_ = df.drop(columns=["image_path"])
+    else:
+        df_ = df.copy()
+    return [PropertyDetails(**row.to_dict()) for _, row in df_.iterrows()]
+
+
 def print_schemas(schema):
     text_list = []
     for key, value in schema.model_dump().items():
