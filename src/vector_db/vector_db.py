@@ -17,6 +17,7 @@ class RAGWithChromaClipEmbeddings:
     _drop_cols = ["image_path"]
 
     def __init__(self, df: pd.DataFrame):
+        self._query_results_parsed = None
         self._df = df.copy()
         self._client = chromadb.PersistentClient(path=self._db_name)
 
@@ -62,14 +63,6 @@ class RAGWithChromaClipEmbeddings:
         text = [print_schemas(prop) for prop in properties_schema]
         return text
 
-    def query_db(self, query, results: int = 3):
-        results = self._collection.query(
-            query_texts=[query],
-            n_results=results,
-            include=["uris", "distances"]
-        )
-        return results
-
     @staticmethod
     def _show_image(image_path):
         if os.path.exists(image_path):
@@ -82,7 +75,17 @@ class RAGWithChromaClipEmbeddings:
         else:
             print(f"⚠️ Image not found: {image_path}")
 
-    def display_search_results(self, results):
+    def query_db(self, query, results: int = 3):
+        results = self._collection.query(
+            query_texts=[query],
+            n_results=results,
+            include=["uris", "distances"]
+        )
+        self._query_results_parsed = self._parse_query_results(results)
+        return results
+
+    def _parse_query_results(self, results):
+        parsed_results = []
         ids = results.get("ids", [[]])[0]  # Extracts first list (if multiple results exist)
         uris = results.get("uris", [[]])[0]  # Extracts first list (image paths)
         distances = results.get("distances", [[]])[0]  # Extract distances if available
@@ -96,5 +99,22 @@ class RAGWithChromaClipEmbeddings:
                 text = '\n'.join(["\n" + "="*50,
                                   f"🏡 {idx+1}. House Suggestion (Distance: {distance:.4f})",
                                   text])
-                print(text)
-                self._show_image(image_path)
+                parsed_results.append({'text': text, 'image_path': image_path})
+            return parsed_results
+
+    def display_query_results(self):
+        for result in self._query_results_parsed:
+            text = result.get("text")
+            image_path = result.get("image_path")
+            print(text)
+            self._show_image(image_path)
+
+    def display_result(self, result):
+        text = result.get("text")
+        image_path = result.get("image_path")
+        print(text)
+        self._show_image(image_path)
+
+    @property
+    def query_results(self):
+        return self._query_results_parsed

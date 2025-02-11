@@ -67,7 +67,18 @@ class BuyerCollectorPreferences:
             ([f"{key}: {value}" for key, value in self._preferences.items()])
 
         prompt_template = """
-        Based on the following buyer preferences, create a concise summary of what the buyer is looking for in a property:
+        Using the buyer preferences provided below, create a concise summary of what the buyer is looking for in a property. 
+        
+        If the preferences include details such as the name of the neighborhood, the price, the number of bedrooms, the number of bathrooms, or the house size, include this information numerically wherever possible. Do not invent information. If the information is not provided, insert blank space. Format the summary according to the following schema:
+        
+        neighborhood: [Name of the neighborhood selected by the buyer]
+        price: [Price in dollars]
+        bedrooms: [Number of bedrooms]
+        bathrooms: [Number of bathrooms]
+        house_size: [House size in square feet]
+        description: [A concise summary of the buyer’s requirements]
+        
+        Buyer Preferences:
         {preferences}
         """
         prompt = PromptTemplate(
